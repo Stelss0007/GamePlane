@@ -10,6 +10,9 @@ var requestAnimFrame = (function(){
             window.setTimeout(callback, 1000 / 60);
         };
 })();
+
+var lastRepaintTime=window.performance.now();
+
 var audioBuh = new Audio('sound/buh.ogg');
 var audioShot = new Audio('sound/shot.ogg');
 // Create the canvas
@@ -67,10 +70,32 @@ resources.load([
     'img/plane-oponent2-70.png',
     'img/plane-oponent3-70.png',
     'img/plane1-70.png',
+    'img/clouds_layer1.png',
+    'img/clouds_layer2.png',
+    'img/land_layer_1.jpg',
 ]);
 resources.onReady(init);
 
 var wall = document.getElementById("content");
+
+
+//Облака
+var cloudsLayer1 = {
+    pos: [0, -600],
+    sprite: new Sprite('img/clouds_layer1.png', [0, 0], [600, 1200])
+};
+var cloudsLayer2 = {
+    pos: [0, -300],
+    sprite: new Sprite('img/clouds_layer2.png', [0, 0], [600, 1200])
+};
+var landLayer1 = {
+    pos: [0, -900],
+    sprite: new Sprite('img/land_layer_1.jpg', [0, 0], [600, 1569])
+};
+
+var cloudsLayer1Speed = 30;
+var cloudsLayer2Speed = 35;
+var landLayer1Speed = 25;
 
 // Game state
 var player = {
@@ -214,6 +239,22 @@ function enemyFire(enemy) {
 function updateEntities(dt) {
     // Update the player sprite animation
     player.sprite.update(dt);
+    
+    
+    //Update clouds
+    cloudsLayer1.pos[1] += cloudsLayer1Speed * dt;
+    if(cloudsLayer1.pos[1] > canvas.height) {
+        cloudsLayer1.pos[1] = -800;
+    }
+    cloudsLayer2.pos[1] += cloudsLayer2Speed * dt;
+    if(cloudsLayer2.pos[1] > canvas.height) {
+        cloudsLayer2.pos[1] = -1100;
+    }
+    
+    landLayer1.pos[1] += landLayer1Speed * dt;
+    if((landLayer1.pos[1] + canvas.height)  > canvas.height) {
+        landLayer1.pos[1] = -600;
+    }
 
     // Update all the bullets
     for(var i=0; i<bullets.length; i++) {
@@ -404,10 +445,12 @@ function checkPlayerBounds() {
     }
 }
 
+
+
 // Draw everything
 function render() {
-    ctx.fillStyle = terrainPattern;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    renderMap();
         
     // Render the player if the game isn't over
     if(!isGameOver) {
@@ -419,6 +462,15 @@ function render() {
     renderEntities(enemies);
     renderEntities(explosions);
 };
+
+function renderMap() {
+    ctx.fillStyle = '#2858FF';//terrainPattern;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    renderEntity(landLayer1);
+    renderEntity(cloudsLayer1);
+    renderEntity(cloudsLayer2);
+}
 
 function renderEntities(list) {
     for(var i=0; i<list.length; i++) {
@@ -440,17 +492,6 @@ function gameOver() {
     document.getElementById('game-over-overlay').style.display = 'block';
     isGameOver = true;
 }
-
-var moveBackground = function(position) {
-    var animation = setInterval(function(){
-        position += 1;
-        content.style = 'background-position-y:' + position + 'px';
-
-        if(position >= 1000) {
-            position = 5;
-        }
-    }, 50);
-};
 
 function playBuh() {
     audioBuh.play();
