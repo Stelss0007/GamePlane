@@ -14,7 +14,6 @@ var requestAnimFrame = (function(){
 var lastRepaintTime=window.performance.now();
 
 var audioBuh = new Audio('sound/buh.ogg');
-var audioBuhSmall = new Audio('sound/buh-small.mp3');
 var audioShot = new Audio('sound/shot.ogg');
 var audioBonuse = new Audio('sound/bonuse.mp3');
 // Create the canvas
@@ -64,7 +63,6 @@ function init() {
 
 resources.load([
     'img/sprites.png',
-    'img/buhh.png',
     'img/rocket2.png',
     'img/rocket1.png',
     'img/background.jpg',
@@ -158,7 +156,6 @@ var terrainPattern;
 
 var score = 0;
 var scoreEl = document.getElementById('score');
-var playerLifeEl = document.getElementById('life');
 
 // Speed in pixels per second
 var playerSpeed = 200;
@@ -193,7 +190,6 @@ function update(dt) {
     checkCollisions();
 
     scoreEl.innerHTML = score;
-    playerLifeEl.innerHTML = playerLife;
     if(score > 1000) {
         enemyPlaneNumber = '1';
         enemyCanFire = true;
@@ -470,7 +466,6 @@ function checkCollisions() {
         }
 
         if(boxCollides(pos, size, player.pos, player.sprite.size)) {
- 
             playBuh();
             enemies.splice(i, 1);
             explosions.push({
@@ -484,7 +479,6 @@ function checkCollisions() {
                                    true)
             });
             gameOver();
-
         }
     }
     
@@ -495,41 +489,23 @@ function checkCollisions() {
 
         if(boxCollides(player.pos, player.sprite.size, pos2, size2)) {
             // Add an explosion
-            if(playerLife<=0) {
-                playBuh();
-                explosions.push({
-                    pos: player.pos,
-                    sprite: new Sprite('img/sprites.png',
-                                       [0, 117],
-                                       [39, 39],
-                                       16,
-                                       [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-                                       null,
-                                       true)
-                });
-
-                //Add New Enemie
-                gameOver();
-                break;
-            }
-            
-            pos2[1] += 20; 
+            playBuh();
             explosions.push({
-                    pos: pos2,
-                    sprite: new Sprite('img/buhh.png',
-                                       [0, 0],
-                                       [15, 15],
-                                       16,
-                                       [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-                                       null,
-                                       true)
-                });
-            playBuhSmall();
-            navigator.vibrate(200);
-            playerLife -= 1;
-            
+                pos: player.pos,
+                sprite: new Sprite('img/sprites.png',
+                                   [0, 117],
+                                   [39, 39],
+                                   16,
+                                   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                                   null,
+                                   true)
+            });
+
             // Remove the bullet and stop this iteration
             enemyBullets.splice(j, 1);
+            
+            //Add New Enemie
+            gameOver();
             break;
         }
     }
@@ -623,10 +599,6 @@ function playBuh() {
     audioBuh.play();
 }
 
-function playBuhSmall() {
-    audioBuhSmall.play();
-}
-
 function playShot() {
     audioShot.play();
 }
@@ -652,9 +624,6 @@ function reset() {
     bullets = [];
     enemyBullets = [];
 
-    playerDamage = 1;
-    playerLife = 5;
-    
     player.pos = [50, canvas.height / 2];
     //moveBackground(0);
     addEnemy();
