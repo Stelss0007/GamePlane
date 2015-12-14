@@ -13,10 +13,16 @@ var requestAnimFrame = (function(){
 
 var lastRepaintTime=window.performance.now();
 
+
+//Sounds
 var audioBuh = new Audio('sound/buh.ogg');
 var audioBuhSmall = new Audio('sound/buh-small.mp3');
 var audioShot = new Audio('sound/shot.ogg');
 var audioBonuse = new Audio('sound/bonuse.mp3');
+var audioBg1 = new Audio('sound/bg1.mp3');
+audioBg1.loop = true;
+
+
 // Create the canvas
 var content = document.getElementById('content');
 
@@ -73,6 +79,9 @@ resources.load([
     'img/plane-oponent2-70.png',
     'img/plane-oponent3-70.png',
     'img/plane1-70.png',
+    'img/player/plane-f-16.png',
+    'img/player/plane-su-34.png',
+    'img/player/plane-f-15.png',
     'img/clouds_layer1.png',
     'img/clouds_layer2.png',
     'img/land_layer_1.jpg',
@@ -134,7 +143,7 @@ var landLayer1Speed = 25;
 // Game state
 var player = {
     pos: [0, 0],
-    sprite: new Sprite('img/plane1-70.png', [0, 0], [70, 56], 16, [0, 1], 'vertical')
+    sprite: new Sprite('img/player/plane-f-16.png', [0, 0], [70, 56], 16, [0, 1], 'vertical')
 };
 
 var playerDamage = 1;
@@ -161,7 +170,8 @@ var scoreEl = document.getElementById('score');
 var playerLifeEl = document.getElementById('life');
 
 // Speed in pixels per second
-var playerSpeed = 200;
+//var playerSpeed = 240;
+var playerSpeed = 240;
 var bulletSpeed = 500;
 
 var enemyBulletsSpeed = 300;
@@ -213,22 +223,26 @@ function update(dt) {
 };
  
 function handleInput(dt) {
+    var delta = input.delta();
+    
+    //scoreEl.innerHTML = delta.x + ' - ' + delta.y;
+    
     if(input.isDown('DOWN') || input.isDown('s')) {
-        player.pos[1] += playerSpeed * dt;
+        player.pos[1] += playerSpeed * dt + delta.y;
     }
 
     if(input.isDown('UP') || input.isDown('w')) {
-        player.pos[1] -= playerSpeed * dt;
+        player.pos[1] -= playerSpeed * dt + delta.y;
     }
 
     if(input.isDown('LEFT') || input.isDown('a')) {
-        player.pos[0] -= playerSpeed * dt;
+        player.pos[0] -= playerSpeed * dt + delta.x;
         
         //scoreEl.innerHTML = 'LEFT';
     }
 
     if(input.isDown('RIGHT') || input.isDown('d')) {
-        player.pos[0] += playerSpeed * dt;
+        player.pos[0] += playerSpeed * dt + delta.x;
         
         //scoreEl.innerHTML = 'RIGHT';
     }
@@ -495,6 +509,7 @@ function checkCollisions() {
 
         if(boxCollides(player.pos, player.sprite.size, pos2, size2)) {
             // Add an explosion
+            playerCollised();
             if(playerLife<=0) {
                 playBuh();
                 explosions.push({
@@ -613,10 +628,18 @@ function renderEntity(entity) {
 
 // Game over
 function gameOver() {
+    audioBg1.pause();
     navigator.vibrate(500);
     document.getElementById('game-over').style.display = 'block';
     document.getElementById('game-over-overlay').style.display = 'block';
     isGameOver = true;
+}
+
+function playerCollised() {
+    document.getElementById('player-collised-overlay').style.display = 'block';
+    setTimeout(function(){
+        document.getElementById('player-collised-overlay').style.display = 'none';
+    }, 500);
 }
 
 function playBuh() {
@@ -637,6 +660,7 @@ function playBonuse() {
 
 // Reset game to original state
 function reset() {
+    audioBg1.play();
     document.getElementById('game-over').style.display = 'none';
     document.getElementById('game-over-overlay').style.display = 'none';
     isGameOver = false;

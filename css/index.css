@@ -32,7 +32,7 @@ body {
     -webkit-background-size: cover;
     -moz-background-size: cover;
     -o-background-size: cover;
-    background-size: cover;
+    /* background-size: initial; */
 }
 
 
@@ -167,15 +167,24 @@ h1 {
 }
 
 
-@keyframes glowing {
+@keyframes glowingPlayBtn {
   0% { background-color: #B20000; box-shadow: 0 0 3px #7EB75D; background-image: linear-gradient(to bottom, #458421, #005900);}
   50% { background-color: #FF0000; box-shadow: 0 0 40px #7EB75D; background-image: linear-gradient(to bottom, #458421, #005900);}
   100% { background-color: #B20000; box-shadow: 0 0 3px #7EB75D; }
 }
 
+@keyframes animPlayBtn{
+    from {margin-left: -180px;}
+    to {left: 10px;}
+}
+
 .btnPlay {
-  -webkit-animation: glowing 1500ms infinite;
-  -moz-animation: glowing 1500ms infinite;
-  -o-animation: glowing 1500ms infinite;
-  animation: glowing 1500ms infinite;
+  -webkit-animation: glowingPlayBtn 1500ms infinite;
+  -moz-animation: glowingPlayBtn 1500ms infinite;
+  -o-animation: glowingPlayBtn 1500ms infinite;
+  animation: glowingPlayBtn 1500ms infinite;
+}
+
+.move-from-left {
+    animation:animPlayBtn 1s 1;
 }

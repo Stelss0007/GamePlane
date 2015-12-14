@@ -1,5 +1,12 @@
 document.addEventListener("deviceready", onDeviceReady, false);
 window.watchID = null;
+window.lastDelta = {
+    x:0,
+    y:0
+};
+
+window.deltaX = 0;
+window.deltaY = 0;
 
 function onDeviceReady() {
     startWatch();
@@ -21,6 +28,8 @@ function onSuccess(acceleration) {
          x: acceleration.x * 10,
          y: acceleration.y *10
      };
+//     window.deltaX = Math.abs(delta.x - window.lastDelta.x);
+//     window.deltaY = Math.abs(delta.y - window.lastDelta.y);
 
      if(delta.x < 0) {
          input.setKeyFromAccelerator('RIGHT');
@@ -37,6 +46,8 @@ function onSuccess(acceleration) {
      if(delta.y > 0) {
          input.setKeyFromAccelerator('DOWN'); 
      }
+     
+     window.lastDelta = delta;
 }
 
 (function() {
@@ -80,6 +91,10 @@ function onSuccess(acceleration) {
     window.input = {
         isDown: function(key) {
             return pressedKeys[key.toUpperCase()];
+        },
+        
+        delta: function(){
+            return {x: window.deltaX, y: window.deltaY}
         },
         
         setKeyFromAccelerator: function(key) {
