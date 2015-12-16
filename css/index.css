@@ -35,6 +35,10 @@ body {
     /* background-size: initial; */
 }
 
+.clear {
+    clear: both;
+}
+
 
 /* Portrait layout (default) */
 .app {
@@ -112,10 +116,9 @@ h1 {
     border-radius: 6px;
     text-decoration: none;
     color: #fff;
-    
     background-color: #31b0d5;
     border-color: #269abc;
-    
+    text-align: center;
 } 
 
 
@@ -187,4 +190,78 @@ h1 {
 
 .move-from-left {
     animation:animPlayBtn 1s 1;
+}
+
+
+/** select page **/
+#angar-bg {
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto;
+    height: 650px;
+    background-image: url(../img/bg/background.jpg);
+    background-repeat: no-repeat;
+}
+
+#angar-plane {
+    width: 300px;
+    height: 175px;
+    margin-top: 10px;
+    margin-left: 20px;
+}
+
+#player-planes-list {
+    background: rgba(0, 0, 0, 0.2);
+    position: relative;
+    min-height: 70px;
+    bottom: 0px;
+}
+
+#player-planes-list ul{
+    position: relative;   
+    padding: 20px;
+}
+
+#player-planes-list ul li {
+    display: block;
+    float: left;
+    height: 55px;
+    overflow: hidden;
+    margin: 3px;
+    border: 2px solid #333;
+    border-radius: 8px;
+}
+
+#player-planes-list ul li.selected {
+    border-color: green;
+    box-shadow: 0 0 12px green;
+    
+}
+
+#angar-bg #planeName {
+    color: white;
+    text-shadow: 2px 1px 3px #333;
+    font-size: 28px;
+    padding: 10px
+}
+
+#angar-bg #planeDescription {
+    color: white;
+    text-shadow: 2px 1px 3px #333;
+    font-size: 12px;
+    padding: 15px;
+    margin: 15px 5px;
+    background-color: rgba(0, 0, 0, .4);
+    border-radius: 8px;
+    text-transform: none;
+}
+
+.btnSelect {
+    padding: 20px 25px;
+    position: absolute;
+    top: 20px;
+    left: 10px;
+    background: #003FF7;
+    width: 94px;
+    background-image: linear-gradient(to bottom, #1426A6, #327FC5);
 }

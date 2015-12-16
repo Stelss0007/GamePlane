@@ -10,11 +10,27 @@ and open the template in the editor.
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="css/index.css" rel="stylesheet" type="text/css"/>
+        <script type="text/javascript" charset="utf-8" src="cordova.js"></script>
         <script>
             //window.location='./main.html';
        </script>
     </head>
     <body>
+        <a class="btn btnSelect move-from-left" href="./hangar.html">Hangar</a>
         <a class="btn btnPlay move-from-left" href="./main.html">Play Game</a>
+        
+        <script>
+            document.addEventListener("deviceready", onDeviceReady, false);
+            function onDeviceReady(){
+                document.addEventListener("backbutton", function(e){
+                    e.preventDefault();
+                    exitApp();
+                });
+            }
+            
+            var exitApp = function() {
+                navigator.app.exitApp();
+            }
+        </script>
     </body>
 </html>

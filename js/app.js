@@ -11,8 +11,33 @@ var requestAnimFrame = (function(){
         };
 })();
 
+resources.load([
+    'img/sprites.png',
+    'img/buhh.png',
+    'img/rocket2.png',
+    'img/rocket1.png',
+    'img/background.jpg',
+    'img/plane-oponent0-70.png',
+    'img/plane-oponent1-70.png',
+    'img/plane-oponent2-70.png',
+    'img/plane-oponent3-70.png',
+    'img/plane1-70.png',
+    
+    'img/player/plane-f-16.png',
+    'img/player/plane-su-34.png',
+    'img/player/plane-f-15.png',
+    'img/player/plane-f-15-2.png',
+    
+    'img/clouds_layer1.png',
+    'img/clouds_layer2.png',
+    'img/land_layer_1.jpg',
+    'img/bonuses.png',
+]);
+resources.onReady(init);
+
 var lastRepaintTime=window.performance.now();
 
+var currentPlayerConf = getCurrentPlayer();
 
 //Sounds
 var audioBuh = new Audio('sound/buh.ogg');
@@ -41,6 +66,15 @@ content.appendChild(canvas);
 // The main game loop
 var lastTime;
 
+function getCurrentPlayer() {
+    var currentPlayerPlainNumber = 0;    
+    if(localStorage.getItem("currentPlayerPlainNumber")) {
+       currentPlayerPlainNumber = localStorage.getItem("currentPlayerPlainNumber");
+    } 
+    
+    return playerList[currentPlayerPlainNumber];
+}
+
 function main() {
     var now = Date.now();
     var dt = (now - lastTime) / 1000.0;
@@ -60,7 +94,7 @@ function init() {
     });
     
     document.getElementById('btnFire').addEventListener('click', function() {
-        playerFire();
+        player.fire();
     });
 
     reset();
@@ -68,26 +102,7 @@ function init() {
     main();
 }
 
-resources.load([
-    'img/sprites.png',
-    'img/buhh.png',
-    'img/rocket2.png',
-    'img/rocket1.png',
-    'img/background.jpg',
-    'img/plane-oponent0-70.png',
-    'img/plane-oponent1-70.png',
-    'img/plane-oponent2-70.png',
-    'img/plane-oponent3-70.png',
-    'img/plane1-70.png',
-    'img/player/plane-f-16.png',
-    'img/player/plane-su-34.png',
-    'img/player/plane-f-15.png',
-    'img/clouds_layer1.png',
-    'img/clouds_layer2.png',
-    'img/land_layer_1.jpg',
-    'img/bonuses.png',
-]);
-resources.onReady(init);
+
 
 var wall = document.getElementById("content");
 
@@ -97,21 +112,21 @@ var currentBonuseInfo = null;
 
 var bonuses = [
     { 
-        pos: [],
+        position: {x: 0, y: 0},
         sprite: new Sprite('img/bonuses.png', [0, 0], [70, 70]),
         fireBullets: 3,
         time: 30000,
         created: null
     },
     { 
-        pos: [],
+        position: {x: 0, y: 0},
         sprite: new Sprite('img/bonuses.png', [0, 70], [70, 70]),
         fireBullets: 5,
         time: 20000,
         created: null
     },
     { 
-        pos: [],
+        position: {x: 0, y: 0},
         sprite: new Sprite('img/bonuses.png', [0, 140], [70, 70]),
         fireBullets: 1,
         fireAuto: true,
@@ -124,15 +139,15 @@ var bonuses = [
 
 //Облака
 var cloudsLayer1 = {
-    pos: [0, -600],
+    position: {x: 0, y: -600},
     sprite: new Sprite('img/clouds_layer1.png', [0, 0], [600, 1200])
 };
 var cloudsLayer2 = {
-    pos: [0, -300],
+    position: {x: 0, y: -300},
     sprite: new Sprite('img/clouds_layer2.png', [0, 0], [600, 1200])
 };
 var landLayer1 = {
-    pos: [0, -900],
+    position: {x: 0, y: -900},
     sprite: new Sprite('img/land_layer_1.jpg', [0, 0], [600, 1569])
 };
 
@@ -141,18 +156,11 @@ var cloudsLayer2Speed = 35;
 var landLayer1Speed = 25;
 
 // Game state
-var player = {
-    pos: [0, 0],
-    sprite: new Sprite('img/player/plane-f-16.png', [0, 0], [70, 56], 16, [0, 1], 'vertical')
-};
-
-var playerDamage = 1;
-var playerLife = 10;
+var player = new PlayerClass();
 
 
 var enemyPlaneNumber = '0';
 
-var bullets = [];
 var enemyBullets = [];
 
 var enemies = [];
@@ -160,7 +168,7 @@ var explosions = [];
 var enemyCanFire = false;
 
 var enemyLastFire = Date.now();
-var lastFire = Date.now();
+
 var gameTime = 0;
 var isGameOver;
 var terrainPattern;
@@ -169,10 +177,6 @@ var score = 0;
 var scoreEl = document.getElementById('score');
 var playerLifeEl = document.getElementById('life');
 
-// Speed in pixels per second
-//var playerSpeed = 240;
-var playerSpeed = 240;
-var bulletSpeed = 500;
 
 var enemyBulletsSpeed = 300;
 var enemySpeed = 50;
@@ -181,8 +185,10 @@ var enemySpeed = 50;
 function addEnemy() {
     
     enemies.push({
-            pos: [Math.random() * (canvas.width - 70),
-                  -50 ],
+            position: {
+                x:Math.random() * (canvas.width - 70),
+                y: -50 
+            },
             sprite: new Sprite('img/plane-oponent'+enemyPlaneNumber+'-70.png', [0, 0], [70, 56], 16, [0, 1], 'vertical')
         });
 }
@@ -203,7 +209,7 @@ function update(dt) {
     checkCollisions();
 
     scoreEl.innerHTML = score;
-    playerLifeEl.innerHTML = playerLife;
+    playerLifeEl.innerHTML = player.life;
     if(score > 1000) {
         enemyPlaneNumber = '1';
         enemyCanFire = true;
@@ -228,78 +234,35 @@ function handleInput(dt) {
     //scoreEl.innerHTML = delta.x + ' - ' + delta.y;
     
     if(input.isDown('DOWN') || input.isDown('s')) {
-        player.pos[1] += playerSpeed * dt + delta.y;
+        player.position.y += player.speed * dt + delta.y;
     }
 
     if(input.isDown('UP') || input.isDown('w')) {
-        player.pos[1] -= playerSpeed * dt + delta.y;
+        player.position.y -= player.speed * dt + delta.y;
     }
 
     if(input.isDown('LEFT') || input.isDown('a')) {
-        player.pos[0] -= playerSpeed * dt + delta.x;
+        player.position.x -= player.speed * dt + delta.x;
         
         //scoreEl.innerHTML = 'LEFT';
     }
 
     if(input.isDown('RIGHT') || input.isDown('d')) {
-        player.pos[0] += playerSpeed * dt + delta.x;
+        player.position.x += player.speed * dt + delta.x;
         
         //scoreEl.innerHTML = 'RIGHT';
     }
 
-    if((input.isDown('SPACE') || (currentBonuseInfo && currentBonuseInfo.fireAuto)) &&
-       !isGameOver &&
-       Date.now() - lastFire > 100) {
-        playerFire();
+    if((input.isDown('SPACE') || (player.bonus && player.bonus.fireAuto)) &&
+        !isGameOver &&
+        Date.now() - player.lastFire > 100) 
+    {
+        player.fire();
     }
 }
 
 
-function playerFire() {
-    playShot();
-//    var x = player.pos[0] + player.sprite.size[0] / 2 ;
-//    var y = player.pos[1] + player.sprite.size[1] / 2;
-    var x = player.pos[0] + player.sprite.size[0] / 2 - 10;
-    var y = player.pos[1] - 5;
-  
-    bullets.push({ pos: [x, y],
-                   dir: 'up',
-                   sprite: new Sprite('img/rocket2.png', [0, 0], [10, 20 ]) });
-//    bullets.push({ pos: [x, y],   
-//                   dir: 'down',
-//                   sprite: new Sprite('img/sprites.png', [0, 60], [9, 5]) });
 
-    if(currentBonuseInfo) {
-        if(currentBonuseInfo.fireBullets > 1) {
-            if(currentBonuseInfo.fireBullets == 3) {
-                bullets.push({ pos: [x-15, y+10],
-                   dir: 'up',
-                   sprite: new Sprite('img/rocket2.png', [0, 0], [10, 20 ]) });
-               
-                bullets.push({ pos: [x+15, y+10],
-                   dir: 'up',
-                   sprite: new Sprite('img/rocket2.png', [0, 0], [10, 20 ]) });
-            }
-            if(currentBonuseInfo.fireBullets == 5) {
-                bullets.push({ pos: [x-15, y+10],
-                   dir: 'up',
-                   sprite: new Sprite('img/rocket2.png', [0, 0], [10, 20 ]) });
-                bullets.push({ pos: [x-30, y+10],
-                   dir: 'up',
-                   sprite: new Sprite('img/rocket2.png', [0, 0], [10, 20 ]) });
-               
-                bullets.push({ pos: [x+15, y+10],
-                   dir: 'up',
-                   sprite: new Sprite('img/rocket2.png', [0, 0], [10, 20 ]) });
-                bullets.push({ pos: [x+30, y+10],
-                   dir: 'up',
-                   sprite: new Sprite('img/rocket2.png', [0, 0], [10, 20 ]) });
-            }
-        }
-    }
-
-    lastFire = Date.now();
-}
 
 function enemyFire(enemy) {
     
@@ -327,35 +290,35 @@ function updateEntities(dt) {
     
     
     //Update clouds
-    cloudsLayer1.pos[1] += cloudsLayer1Speed * dt;
-    if(cloudsLayer1.pos[1] > canvas.height) {
-        cloudsLayer1.pos[1] = -800;
+    cloudsLayer1.position.y += cloudsLayer1Speed * dt;
+    if(cloudsLayer1.position.y > canvas.height) {
+        cloudsLayer1.position.y = -800;
     }
-    cloudsLayer2.pos[1] += cloudsLayer2Speed * dt;
-    if(cloudsLayer2.pos[1] > canvas.height) {
-        cloudsLayer2.pos[1] = -1100;
+    cloudsLayer2.position.y += cloudsLayer2Speed * dt;
+    if(cloudsLayer2.position.y > canvas.height) {
+        cloudsLayer2.position.y = -1100;
     }
     
-    landLayer1.pos[1] += landLayer1Speed * dt;
-    if((landLayer1.pos[1] + canvas.height)  > canvas.height) {
-        landLayer1.pos[1] = -600;
+    landLayer1.position.y += landLayer1Speed * dt;
+    if((landLayer1.position.y + canvas.height)  > canvas.height) {
+        landLayer1.position.y = -600;
     }
 
     // Update all the bullets
-    for(var i=0; i<bullets.length; i++) {
-        var bullet = bullets[i];
+    for(var i=0; i<player.bullets.length; i++) {
+        var bullet = player.bullets[i];
 
         switch(bullet.dir) {
-        case 'up': bullet.pos[1] -= bulletSpeed * dt; break;
-        case 'down': bullet.pos[1] += bulletSpeed * dt; break;
+        case 'up': bullet.position.y -= player.bulletSpeed * dt; break;
+        case 'down': bullet.position.y += player.bulletSpeed * dt; break;
         default:
-            bullet.pos[0] += bulletSpeed * dt;
+            bullet.position.x += player.bulletSpeed * dt;
         }
 
         // Remove the bullet if it goes offscreen
-        if(bullet.pos[1] < 0 || bullet.pos[1] > canvas.height ||
-           bullet.pos[0] > canvas.width) {
-            bullets.splice(i, 1);
+        if(bullet.position.y < 0 || bullet.position.y > canvas.height ||
+           bullet.position.x > canvas.width) {
+            player.bullets.splice(i, 1);
             i--;
         }
     }
@@ -385,7 +348,7 @@ function updateEntities(dt) {
         enemies[i].sprite.update(dt);
 
         //Enemy fire
-        if(Math.abs(enemies[i].pos[0] - player.pos[0]) < 35){
+        if(Math.abs(enemies[i].pos[0] - player.position.x) < 35){
             enemyFire(enemies[i]);
         }
         
@@ -483,7 +446,7 @@ function checkCollisions() {
             }
         }
 
-        if(boxCollides(pos, size, player.pos, player.sprite.size)) {
+        if(boxCollides(pos, size, player.position, player.sprite.size)) {
  
             playBuh();
             enemies.splice(i, 1);
@@ -507,13 +470,13 @@ function checkCollisions() {
         var pos2 = enemyBullets[j].pos;
         var size2 = enemyBullets[j].sprite.size;
 
-        if(boxCollides(player.pos, player.sprite.size, pos2, size2)) {
+        if(boxCollides(player.position, player.sprite.size, pos2, size2)) {
             // Add an explosion
             playerCollised();
-            if(playerLife<=0) {
+            if(player.life<=0) {
                 playBuh();
                 explosions.push({
-                    pos: player.pos,
+                    pos: player.position,
                     sprite: new Sprite('img/sprites.png',
                                        [0, 117],
                                        [39, 39],
@@ -541,7 +504,7 @@ function checkCollisions() {
                 });
             playBuhSmall();
             navigator.vibrate(200);
-            playerLife -= 1;
+            player.life -= 1;
             
             // Remove the bullet and stop this iteration
             enemyBullets.splice(j, 1);
@@ -552,7 +515,7 @@ function checkCollisions() {
     
     //Bonuse collise
     if(bonuse) {
-        if(boxCollides(player.pos, player.sprite.size, bonuse.pos, bonuse.sprite.size)) {
+        if(boxCollides(player.position, player.sprite.size, bonuse.pos, bonuse.sprite.size)) {
             playBonuse();
             currentBonuseInfo = bonuse;
             bonuse = null;
@@ -562,18 +525,18 @@ function checkCollisions() {
 
 function checkPlayerBounds() {
     // Check bounds
-    if(player.pos[0] < 0) {
-        player.pos[0] = 0;
+    if(player.position.x < 0) {
+        player.position.x = 0;
     }
-    else if(player.pos[0] > canvas.width - player.sprite.size[0]) {
-        player.pos[0] = canvas.width - player.sprite.size[0];
+    else if(player.position.x > canvas.width - player.sprite.size[0]) {
+        player.position.x = canvas.width - player.sprite.size[0];
     }
 
-    if(player.pos[1] < 0) {
-        player.pos[1] = 0;
+    if(player.position.y < 0) {
+        player.position.y = 0;
     }
-    else if(player.pos[1] > canvas.height - player.sprite.size[1]) {
-        player.pos[1] = canvas.height - player.sprite.size[1];
+    else if(player.position.y > canvas.height - player.sprite.size[1]) {
+        player.position.y = canvas.height - player.sprite.size[1];
     }
 }
 
@@ -598,7 +561,7 @@ function render() {
         renderEntity(bonuse);
     }
     
-    renderEntities(bullets);
+    renderEntities(player.bullets);
     renderEntities(enemyBullets);
     renderEntities(enemies);
     renderEntities(explosions);
@@ -621,7 +584,7 @@ function renderEntities(list) {
 
 function renderEntity(entity) {
     ctx.save();
-    ctx.translate(entity.pos[0], entity.pos[1]);
+    ctx.translate(entity.position.x, entity.position.y);
     entity.sprite.render(ctx);
     ctx.restore();
 }
@@ -675,12 +638,12 @@ function reset() {
     enemies = [];
     bullets = [];
     enemyBullets = [];
-
-    playerDamage = 1;
-    playerLife = 5;
     
-    player.pos = [50, canvas.height / 2];
-    //moveBackground(0);
-    addEnemy();
+    player.position = {
+        x: 50, 
+        y: canvas.height / 2
+    };
+
+    //addEnemy();
 };
 

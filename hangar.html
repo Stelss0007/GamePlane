@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>TODO supply a title</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="css/index.css" rel="stylesheet" type="text/css"/>
+    </head>
+    <body>
+        <div id="angar-bg">
+            <div id="planeName"></div>
+            <img id="angar-plane" src="" alt=""/>
+            <div id="planeDescription"></div>
+            
+            <div id="player-planes-list">
+                <ul id="player-planes-ul-list">
+                    <li onclick="selectPlain(0);">
+                        <img src="img/player/plane-f-16.png" alt=""/>
+                    </li>
+                    <li onclick="selectPlain(1);">
+                        <img src="img/player/plane-f-15-2.png" alt=""/>
+                    </li>
+                    <li onclick="selectPlain(2);">
+                        <img src="img/player/plane-f-15.png" alt=""/>
+                    </li>
+                    <li onclick="selectPlain(3);">
+                        <img src="img/player/plane-su-34.png" alt=""/>
+                    </li>
+                    <div class="clear"></div>
+                </ul>
+                <div class="clear"></div>
+            </div>
+            <a class="btn" href="#" style="display: block; width: 280px; margin: 10px auto; text-align: center; padding: 20px; background-image: linear-gradient(to bottom, #4ba614, #008c00);" onclick="savePlain();return false;">Select</a>
+        </div>
+        <script src="js/playerList.js" type="text/javascript"></script>
+        <script src="js/select.js" type="text/javascript"></script>
+    </body>
+</html>
