@@ -8,7 +8,7 @@
   </head>
   <body>
 <!--    <div id="accelerometer">Waiting for accelerometer...</div>-->
-
+    <div id="main-wrapper">
         <div id="game-over-overlay">
         </div>
         <div id="player-collised-overlay">
@@ -20,7 +20,7 @@
         </div>
 
         <div class="wrapper content">
-            <div>
+            <div style="float: left;">
                 <div>
                     <label>Score: </label>
                     <span id="score"></span>
@@ -30,16 +30,37 @@
                     <span id="life"></span>
                 </div>
             </div>
+            <div style="float: right; text-align: right;">
+                <div id="bonuse-conteiner">
+                    <span id="bonuse-name"></span>
+                    <br>
+                    <span id="bonuse-time"></span>
+                </div>
+            </div>
+            <div class="clear"></div>
         </div>
 
         <div id="content"></div>
         
-        <div style="margin-top: 0px;">
-            <button id="btnFire">Fire</button>
+        <div style="margin-top: 0px;" id="pilot-board">
+            <div id="pribor">
+                
+            </div>
+            <button id="btnFire"><span>Fire</span></button>
+            <canvas id="radar-conteiner" width="100" height="100">
+                <img src="img/radar.jpg" width="100" height="100" alt=""/>
+            </canvas>
+            <div class="clear"></div>
         </div>
-        
-    <script src="js/playerList.js" type="text/javascript"></script>    
+    </div>      
+    <script src="js/playerList.js" type="text/javascript"></script>  
+    <script src="js/map.js" type="text/javascript"></script>
+    <script src="js/sound.js" type="text/javascript"></script>
     <script src="js/player.js" type="text/javascript"></script>
+    <script src="js/enemy.js" type="text/javascript"></script>
+    <script src="js/bonuse.js" type="text/javascript"></script>
+    <script src="js/enemyBullet.js" type="text/javascript"></script>
+    
     <script src="js/lib/libs.js" type="text/javascript"></script>    
     <script src="js/lib/resource.js" type="text/javascript"></script>
     <script src="js/lib/sprite.js" type="text/javascript"></script>

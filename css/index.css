@@ -32,6 +32,7 @@ body {
     -webkit-background-size: cover;
     -moz-background-size: cover;
     -o-background-size: cover;
+    overflow: hidden;
     /* background-size: initial; */
 }
 
@@ -176,9 +177,14 @@ h1 {
   100% { background-color: #B20000; box-shadow: 0 0 3px #7EB75D; }
 }
 
-@keyframes animPlayBtn{
+@keyframes animLeftBtn{
     from {margin-left: -180px;}
     to {left: 10px;}
+}
+
+@keyframes animRightBtn{
+    from {margin-right: -180px;}
+    to {right: 10px;}
 }
 
 .btnPlay {
@@ -189,7 +195,10 @@ h1 {
 }
 
 .move-from-left {
-    animation:animPlayBtn 1s 1;
+    animation:animLeftBtn 1s 1;
+}
+.move-from-right {
+    animation:animRightBtn 1s 1;
 }
 
 
@@ -250,6 +259,8 @@ h1 {
     text-shadow: 2px 1px 3px #333;
     font-size: 12px;
     padding: 15px;
+    max-height: 135px;
+    overflow-y: auto;
     margin: 15px 5px;
     background-color: rgba(0, 0, 0, .4);
     border-radius: 8px;
@@ -259,8 +270,8 @@ h1 {
 .btnSelect {
     padding: 20px 25px;
     position: absolute;
-    top: 20px;
-    left: 10px;
+    bottom: 20px;
+    right: 10px;
     background: #003FF7;
     width: 94px;
     background-image: linear-gradient(to bottom, #1426A6, #327FC5);

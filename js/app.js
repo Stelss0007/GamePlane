@@ -17,11 +17,14 @@ resources.load([
     'img/rocket2.png',
     'img/rocket1.png',
     'img/background.jpg',
-    'img/plane-oponent0-70.png',
-    'img/plane-oponent1-70.png',
-    'img/plane-oponent2-70.png',
-    'img/plane-oponent3-70.png',
-    'img/plane1-70.png',
+    'img/radar.jpg',
+    'img/enemy/plane-oponent0-70.png',
+    'img/enemy/plane-oponent1-70.png',
+    'img/enemy/plane-oponent2-70.png',
+    'img/enemy/plane-oponent3-70.png',
+    'img/enemy/plane-oponent4-70.png',
+    'img/enemy/plane-oponent5-70.png',
+    'img/enemy/plane-oponent6-70.png',
     
     'img/player/plane-f-16.png',
     'img/player/plane-su-34.png',
@@ -37,43 +40,48 @@ resources.onReady(init);
 
 var lastRepaintTime=window.performance.now();
 
-var currentPlayerConf = getCurrentPlayer();
+// The main game loop
+var lastTime;
+//Бонусы
+var bonuse = null;
 
-//Sounds
-var audioBuh = new Audio('sound/buh.ogg');
-var audioBuhSmall = new Audio('sound/buh-small.mp3');
-var audioShot = new Audio('sound/shot.ogg');
-var audioBonuse = new Audio('sound/bonuse.mp3');
-var audioBg1 = new Audio('sound/bg1.mp3');
-audioBg1.loop = true;
+var enemyPlaneNumber = '0';
+var enemySpeed = 50;
+var enemies = [];
+var explosions = [];
 
+var gameTime = 0;
+var isGameOver;
+var terrainPattern;
+var radarPattern;
+
+var score = 0;
+
+var wall = document.getElementById("content");
+var scoreEl = document.getElementById('score');
+var playerLifeEl = document.getElementById('life');
+var bonuseConteiner = document.getElementById('bonuse-conteiner');
+var bonuseName = document.getElementById('bonuse-name');
+var bonuseTime = document.getElementById('bonuse-time');
 
 // Create the canvas
 var content = document.getElementById('content');
-
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
-//canvas.width = (document.body.clientWidth < 512) ? document.body.clientWidth : 512;
-//canvas.height = 480;
 
+var radarCanvas = document.getElementById("radar-conteiner");
+var radarCtx = radarCanvas.getContext("2d");
 // ...then set the internal size to match
 canvas.width  = content.offsetWidth;
 canvas.height = content.offsetHeight;
-//document.body.appendChild(canvas);
-
 content.appendChild(canvas);
 
-// The main game loop
-var lastTime;
 
-function getCurrentPlayer() {
-    var currentPlayerPlainNumber = 0;    
-    if(localStorage.getItem("currentPlayerPlainNumber")) {
-       currentPlayerPlainNumber = localStorage.getItem("currentPlayerPlainNumber");
-    } 
-    
-    return playerList[currentPlayerPlainNumber];
-}
+var sound = new soundClass();
+var map = new mapClass();
+var enemyBullets = new enemyBulletClass();
+var player = new PlayerClass();
+var enemyCanFire = false;
 
 function main() {
     var now = Date.now();
@@ -88,6 +96,7 @@ function main() {
 
 function init() {
     terrainPattern = ctx.createPattern(resources.get('img/background.jpg'), 'repeat');
+    radarPattern = ctx.createPattern(resources.get('img/radar.jpg'), 'no-repeat');
 
     document.getElementById('play-again').addEventListener('click', function() {
         reset();
@@ -102,101 +111,33 @@ function init() {
     main();
 }
 
-
-
-var wall = document.getElementById("content");
-
-//Бонусы
-var bonuse = null;
-var currentBonuseInfo = null;
-
-var bonuses = [
-    { 
-        position: {x: 0, y: 0},
-        sprite: new Sprite('img/bonuses.png', [0, 0], [70, 70]),
-        fireBullets: 3,
-        time: 30000,
-        created: null
-    },
-    { 
-        position: {x: 0, y: 0},
-        sprite: new Sprite('img/bonuses.png', [0, 70], [70, 70]),
-        fireBullets: 5,
-        time: 20000,
-        created: null
-    },
-    { 
-        position: {x: 0, y: 0},
-        sprite: new Sprite('img/bonuses.png', [0, 140], [70, 70]),
-        fireBullets: 1,
-        fireAuto: true,
-        time: 30000,
-        created: null
-    },
-];
-
-
-
-//Облака
-var cloudsLayer1 = {
-    position: {x: 0, y: -600},
-    sprite: new Sprite('img/clouds_layer1.png', [0, 0], [600, 1200])
-};
-var cloudsLayer2 = {
-    position: {x: 0, y: -300},
-    sprite: new Sprite('img/clouds_layer2.png', [0, 0], [600, 1200])
-};
-var landLayer1 = {
-    position: {x: 0, y: -900},
-    sprite: new Sprite('img/land_layer_1.jpg', [0, 0], [600, 1569])
-};
-
-var cloudsLayer1Speed = 30;
-var cloudsLayer2Speed = 35;
-var landLayer1Speed = 25;
-
-// Game state
-var player = new PlayerClass();
-
-
-var enemyPlaneNumber = '0';
-
-var enemyBullets = [];
-
-var enemies = [];
-var explosions = [];
-var enemyCanFire = false;
-
-var enemyLastFire = Date.now();
-
-var gameTime = 0;
-var isGameOver;
-var terrainPattern;
-
-var score = 0;
-var scoreEl = document.getElementById('score');
-var playerLifeEl = document.getElementById('life');
-
-
-var enemyBulletsSpeed = 300;
-var enemySpeed = 50;
-
-
 function addEnemy() {
+    var enemyPlaneNumber = 0;
+    if(score > 1000) {
+        enemyPlaneNumber = getRandomInt(1, 6);
+        enemyCanFire = true;
+    }
+    if(score > 3000) {
+        enemySpeed = 60;
+    }
+    if(score > 4000) {
+        enemySpeed = 70;   
+    }
+    if(score > 5000) {
+        enemySpeed = 80;    
+    }
+
     
-    enemies.push({
-            position: {
-                x:Math.random() * (canvas.width - 70),
-                y: -50 
-            },
-            sprite: new Sprite('img/plane-oponent'+enemyPlaneNumber+'-70.png', [0, 0], [70, 56], 16, [0, 1], 'vertical')
-        });
+    var enemy = new enemyClass(enemyPlaneNumber);
+    enemy.speed = enemySpeed;
+    enemy.canFire = enemyCanFire;
+    enemies.push(enemy);
 }
 
 // Update game objects
 function update(dt) {
+    
     gameTime += dt;
-//console.log(gameTime);
     handleInput(dt);
     updateEntities(dt);
 
@@ -210,22 +151,6 @@ function update(dt) {
 
     scoreEl.innerHTML = score;
     playerLifeEl.innerHTML = player.life;
-    if(score > 1000) {
-        enemyPlaneNumber = '1';
-        enemyCanFire = true;
-    }
-    if(score > 3000) {
-        enemyPlaneNumber = '2';
-        enemySpeed = 60;
-    }
-    if(score > 4000) {
-        enemyPlaneNumber = '3';
-        enemySpeed = 70;   
-    }
-    if(score > 5000) {
-        enemyPlaneNumber = '3';
-        enemySpeed = 80;    
-    } 
 };
  
 function handleInput(dt) {
@@ -253,7 +178,7 @@ function handleInput(dt) {
         //scoreEl.innerHTML = 'RIGHT';
     }
 
-    if((input.isDown('SPACE') || (player.bonus && player.bonus.fireAuto)) &&
+    if((input.isDown('SPACE') || (player.bonuse && player.bonuse.fireAuto)) &&
         !isGameOver &&
         Date.now() - player.lastFire > 100) 
     {
@@ -263,103 +188,36 @@ function handleInput(dt) {
 
 
 
-
-function enemyFire(enemy) {
-    
-    if(
-       !isGameOver &&
-       enemyCanFire &&
-       Date.now() - enemyLastFire > 200 &&
-       enemy.pos[1] > 20
-       ) {
-        var x = enemy.pos[0] + enemy.sprite.size[0] / 2;
-        var y = enemy.pos[1] + enemy.sprite.size[1] / 2;
-
-        //addEnemy(); 
-        enemyBullets.push({ pos: [x, y],
-                       dir: 'down',
-                       sprite: new Sprite('img/rocket1.png', [0, 0], [13, 20]) 
-                       });
-        enemyLastFire = Date.now();
-    }
-}
-
 function updateEntities(dt) {
     // Update the player sprite animation
     player.sprite.update(dt);
     
-    
-    //Update clouds
-    cloudsLayer1.position.y += cloudsLayer1Speed * dt;
-    if(cloudsLayer1.position.y > canvas.height) {
-        cloudsLayer1.position.y = -800;
-    }
-    cloudsLayer2.position.y += cloudsLayer2Speed * dt;
-    if(cloudsLayer2.position.y > canvas.height) {
-        cloudsLayer2.position.y = -1100;
-    }
-    
-    landLayer1.position.y += landLayer1Speed * dt;
-    if((landLayer1.position.y + canvas.height)  > canvas.height) {
-        landLayer1.position.y = -600;
-    }
-
-    // Update all the bullets
-    for(var i=0; i<player.bullets.length; i++) {
-        var bullet = player.bullets[i];
-
-        switch(bullet.dir) {
-        case 'up': bullet.position.y -= player.bulletSpeed * dt; break;
-        case 'down': bullet.position.y += player.bulletSpeed * dt; break;
-        default:
-            bullet.position.x += player.bulletSpeed * dt;
-        }
-
-        // Remove the bullet if it goes offscreen
-        if(bullet.position.y < 0 || bullet.position.y > canvas.height ||
-           bullet.position.x > canvas.width) {
-            player.bullets.splice(i, 1);
-            i--;
-        }
-    }
+    map.update(dt);
     
     // Update all the bullets
-    for(var i=0; i<enemyBullets.length; i++) {
-        var bullet = enemyBullets[i];
-
-        switch(bullet.dir) {
-            case 'up': bullet.pos[1] -= enemyBulletsSpeed * dt; break;
-            case 'down': bullet.pos[1] += enemyBulletsSpeed * dt; break;
-            default:
-                bullet.pos[0] += enemyBulletsSpeed * dt;
-        }
-
-        // Remove the bullet if it goes offscreen
-        if(bullet.pos[1] < 0 || bullet.pos[1] > canvas.height ||
-           bullet.pos[0] > canvas.width) {
-            enemyBullets.splice(i, 1);
-            i--;
-        }
-    }
-
+    player.updateBulets(dt);
+ 
     // Update all the enemies
     for(var i=0; i<enemies.length; i++) {
-        enemies[i].pos[1] += enemySpeed * dt;
+       
+        enemies[i].position.y += enemies[i].speed * dt;
         enemies[i].sprite.update(dt);
 
         //Enemy fire
-        if(Math.abs(enemies[i].pos[0] - player.position.x) < 35){
-            enemyFire(enemies[i]);
+        if(Math.abs(enemies[i].position.x - player.position.x) < 35){
+            enemies[i].fire();
         }
-        
+
         // Remove if offscreen
-        if(enemies[i].pos[1] + enemies[i].sprite.size[1] > canvas.height + 60) {
+        if(enemies[i].position.y + enemies[i].sprite.size[1] > canvas.height + 60) {
             enemies.splice(i, 1);
             i--;
             //Add New Enemy
             addEnemy();
         }
     }
+    
+    enemyBullets.updateBulets(dt);
 
     // Update all the explosions
     for(var i=0; i<explosions.length; i++) {
@@ -374,9 +232,9 @@ function updateEntities(dt) {
     
     //Update Bonuse
     if(bonuse) {
-        bonuse.pos[1] += enemySpeed * dt;
+        bonuse.position.y += bonuse.speed * dt;
         bonuse.sprite.update(dt);
-        if(bonuse.pos[1] + bonuse.sprite.size[1] > canvas.height + 60) {
+        if(bonuse.position.y + bonuse.sprite.size[1] > canvas.height + 60) {
             bonuse = null; 
         }
     }
@@ -390,10 +248,10 @@ function collides(x, y, r, b, x2, y2, r2, b2) {
 }
 
 function boxCollides(pos, size, pos2, size2) {
-    return collides(pos[0], pos[1],
-                    pos[0] + size[0], pos[1] + size[1],
-                    pos2[0], pos2[1],
-                    pos2[0] + size2[0], pos2[1] + size2[1]);
+    return collides(pos.x, pos.y,
+                    pos.x + size[0], pos.y + size[1],
+                    pos2.x, pos2.y,
+                    pos2.x + size2[0], pos2.y + size2[1]);
 }
 
 function checkCollisions() {
@@ -401,16 +259,16 @@ function checkCollisions() {
     
     // Run collision detection for all enemies and bullets
     for(var i=0; i<enemies.length; i++) {
-        var pos = enemies[i].pos;
+        var pos = enemies[i].position;
         var size = enemies[i].sprite.size;
 
         //Check collides 
-        for(var j=0; j<bullets.length; j++) {
-            var pos2 = bullets[j].pos;
-            var size2 = bullets[j].sprite.size;
+        for(var j=0; j<player.bullets.length; j++) {
+            var pos2 = player.bullets[j].position;
+            var size2 = player.bullets[j].sprite.size;
 
             if(boxCollides(pos, size, pos2, size2)) {
-                playBuh();
+                sound.buh().play();
                 // Remove the enemy
                 enemies.splice(i, 1);
                 i--;
@@ -420,7 +278,7 @@ function checkCollisions() {
 
                 // Add an explosion
                 explosions.push({
-                    pos: pos,
+                    position: pos,
                     sprite: new Sprite('img/sprites.png',
                                        [0, 117],
                                        [39, 39],
@@ -431,14 +289,13 @@ function checkCollisions() {
                 });
         
                 if ((score%1100) == 0) {
-                    var bonuseInex = getRandomInt(0, 2);
-                    bonuse  = bonuses[bonuseInex]; 
-                    bonuse.pos = pos2;
-                    bonuse.created = window.performance.now();
+                    var bonuseInex = getRandomInt(0, 4);
+                    bonuse  = new BonuseClass(bonuseInex); 
+                    bonuse.position = pos2;
                 };
 
                 // Remove the bullet and stop this iteration
-                bullets.splice(j, 1);
+                player.bullets.splice(j, 1);
                 
                 //Add New Enemie
                 addEnemy();
@@ -448,10 +305,10 @@ function checkCollisions() {
 
         if(boxCollides(pos, size, player.position, player.sprite.size)) {
  
-            playBuh();
+            sound.buh().play();
             enemies.splice(i, 1);
             explosions.push({
-                pos: player.pos,
+                position: player.position,
                 sprite: new Sprite('img/sprites.png',
                                    [0, 117],
                                    [39, 39],
@@ -465,18 +322,19 @@ function checkCollisions() {
         }
     }
     
+    
     //Check killed player
-    for(var j=0; j<enemyBullets.length; j++) {
-        var pos2 = enemyBullets[j].pos;
-        var size2 = enemyBullets[j].sprite.size;
+    if(enemyBullets)
+    for(var j=0; j < enemyBullets.bullets.length; j++) {
+        var pos2 = enemyBullets.bullets[j].position;
+        var size2 = enemyBullets.bullets[j].sprite.size;
 
         if(boxCollides(player.position, player.sprite.size, pos2, size2)) {
             // Add an explosion
-            playerCollised();
-            if(player.life<=0) {
-                playBuh();
+            if(player.life<=1) {
+                sound.buh().play();
                 explosions.push({
-                    pos: player.position,
+                    position: player.position,
                     sprite: new Sprite('img/sprites.png',
                                        [0, 117],
                                        [39, 39],
@@ -490,10 +348,10 @@ function checkCollisions() {
                 gameOver();
                 break;
             }
-            
-            pos2[1] += 20; 
+
+            pos2.y += 20; 
             explosions.push({
-                    pos: pos2,
+                    position: pos2,
                     sprite: new Sprite('img/buhh.png',
                                        [0, 0],
                                        [15, 15],
@@ -502,22 +360,35 @@ function checkCollisions() {
                                        null,
                                        true)
                 });
-            playBuhSmall();
+            sound.buhSmall().play();
+            
+            if(player.bonuse.guard){
+                enemyBullets.bullets.splice(j, 1);
+                continue;
+            }
+            
+            playerCollised();
             navigator.vibrate(200);
             player.life -= 1;
-            
+
             // Remove the bullet and stop this iteration
-            enemyBullets.splice(j, 1);
+            enemyBullets.bullets.splice(j, 1);
             break;
         }
     }
-    
-    
+     
     //Bonuse collise
     if(bonuse) {
-        if(boxCollides(player.position, player.sprite.size, bonuse.pos, bonuse.sprite.size)) {
-            playBonuse();
-            currentBonuseInfo = bonuse;
+        if(boxCollides(player.position, player.sprite.size, bonuse.position, bonuse.sprite.size)) {
+            sound.bonuse().play();
+             
+            player.bonuse = bonuse.getBonuseInfo();
+            if(player.bonuse.life) {
+                player.life++;
+            }
+            player.bonuse.created = window.performance.now();
+            bonuseName.innerHTML = player.bonuse.name;
+            bonuseConteiner.style.display = 'block';
             bonuse = null;
         }
     }
@@ -535,8 +406,8 @@ function checkPlayerBounds() {
     if(player.position.y < 0) {
         player.position.y = 0;
     }
-    else if(player.position.y > canvas.height - player.sprite.size[1]) {
-        player.position.y = canvas.height - player.sprite.size[1];
+    else if(player.position.y > ((canvas.height - player.sprite.size[1]) - 20)) {
+        player.position.y = ((canvas.height - player.sprite.size[1]) - 20);
     }
 }
 
@@ -544,16 +415,17 @@ function checkPlayerBounds() {
 
 // Draw everything
 function render() {
-    
-    renderMap();
-        
+    renderRadar();
+    map.render();
     // Render the player if the game isn't over
     if(!isGameOver) {
         renderEntity(player);
-        if(currentBonuseInfo) {
-             if((window.performance.now() - currentBonuseInfo.created) > currentBonuseInfo.time) {
-                 currentBonuseInfo = null;
-             }
+        if(player.bonuse) {
+            bonuseTime.innerHTML = parseInt((player.bonuse.time - (window.performance.now() - player.bonuse.created))/1000) + 'c';
+            if((window.performance.now() - player.bonuse.created) > player.bonuse.time) {
+                player.bonuse = null;
+                bonuseConteiner.style.display = 'none';
+            }
         }
     }
     
@@ -562,18 +434,24 @@ function render() {
     }
     
     renderEntities(player.bullets);
-    renderEntities(enemyBullets);
     renderEntities(enemies);
+    renderEntities(enemyBullets.bullets);
     renderEntities(explosions);
 };
 
-function renderMap() {
-    ctx.fillStyle = '#2858FF';//terrainPattern;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+function renderRadar() {
+    radarCtx.drawImage(resources.get('img/radar.jpg'), 0, 0, 100, 100);
     
-    renderEntity(landLayer1);
-    renderEntity(cloudsLayer1);
-    renderEntity(cloudsLayer2);
+    var delta = canvas.width / (radarCanvas.width - 15);
+    
+    for(var i=0; i<enemies.length; i++) {
+        var pointX = enemies[i].position.x / delta;
+        radarCtx.fillStyle = '#ff0000';
+        radarCtx.fillRect(pointX + 15,30,4,4);
+    }
+    
+//    radarCtx.fillStyle = radarPattern;
+//    radarCtx.fillRect(0, 0, 100, 100);
 }
 
 function renderEntities(list) {
@@ -591,7 +469,7 @@ function renderEntity(entity) {
 
 // Game over
 function gameOver() {
-    audioBg1.pause();
+    sound.background().pause();
     navigator.vibrate(500);
     document.getElementById('game-over').style.display = 'block';
     document.getElementById('game-over-overlay').style.display = 'block';
@@ -600,50 +478,33 @@ function gameOver() {
 
 function playerCollised() {
     document.getElementById('player-collised-overlay').style.display = 'block';
+    content.classList.add('collised');
+    
     setTimeout(function(){
         document.getElementById('player-collised-overlay').style.display = 'none';
+        content.classList.remove('collised');
     }, 500);
-}
-
-function playBuh() {
-    audioBuh.play();
-}
-
-function playBuhSmall() {
-    audioBuhSmall.play();
-}
-
-function playShot() {
-    audioShot.play();
-}
-
-function playBonuse() {
-    audioBonuse.play();
 }
 
 // Reset game to original state
 function reset() {
-    audioBg1.play();
+    sound.background().play();
     document.getElementById('game-over').style.display = 'none';
     document.getElementById('game-over-overlay').style.display = 'none';
     isGameOver = false;
-    
-    enemyPlaneNumber = '0';
-    enemySpeed = 50;
-    enemyCanFire = false;
-    
     gameTime = 0;
     score = 0;
-
+    enemyCanFire = false;
+    enemySpeed = 50;
     enemies = [];
-    bullets = [];
-    enemyBullets = [];
     
-    player.position = {
-        x: 50, 
-        y: canvas.height / 2
-    };
+    map = new mapClass();
+    enemyBullets = new enemyBulletClass();
+    player = new PlayerClass();
+    enemyCanFire = false;
+    
+    player = new PlayerClass();
 
-    //addEnemy();
+    addEnemy();
 };
 
